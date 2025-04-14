@@ -101,3 +101,19 @@ hr {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+.delete-btn {
+    background-color: #499bca;
+    border: none;
+    padding: 10px;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.delete-btn:hover {
+    background-color: #4701b8;
+}
+
