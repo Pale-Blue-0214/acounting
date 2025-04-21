@@ -1,51 +1,68 @@
-//https://script.google.com/macros/s/AKfycbz7Bw9Axs2LUUTizEas02zk8FUnnti2Xfz5bV26xID2leeDUTqCtJEuF0P-n-HF5_pntQ/exec/exec
-const apiUrl = "https://script.google.com/macros/s/AKfycbwyRMfEDjHqxoubWcTvpQECIIPbdmv6Y4voYDZVNidBPTNCLVgLfC_6RCqZiINuj6QaNw/exec";
+const apiUrl = "https://script.google.com/macros/s/AKfycbxwkv_Yh7hAKUkEasPiBk6o0Ql2ywoAcLJ-zOzzRNZPVHabd2tqA7jTct_qKJHINlWSAA/exec";//這邊請換成自己部署的app script網址
 
 const form = document.getElementById("recordForm");
 const recordsContainer = document.getElementById("records");
 
-// 讀取並顯示 Google Sheets 上的資料
+// 載入 Google Sheet 中的資料
 async function loadRecords() {
     try {
         const response = await fetch(apiUrl);
         const data = await response.json();
-        displayRecords(data);
+
+        const recordsContainer = document.getElementById("records");
+        const monthSelect = document.getElementById("monthSelect");
+        const totalAmountDisplay = document.getElementById("totalAmount");
+
+        recordsContainer.innerHTML = "";
+
+        const records = data.slice(1).map(([date, category, amount, note]) => ({
+            date,
+            category,
+            amount: Number(amount),
+            note
+        }));
+
+        // 取得所有月份
+        const months = [...new Set(records.map(r => r.date.slice(0, 7)))];
+        monthSelect.innerHTML = `<option value="all">全部</option>` + months.map(m => `<option value="${m}">${m}</option>`).join("");
+
+        // 顯示紀錄（依選擇月份）
+        function renderRecords(monthFilter = "all") {
+            recordsContainer.innerHTML = "";
+            let total = 0;
+
+            records.forEach((r, index) => {
+                if (monthFilter === "all" || r.date.startsWith(monthFilter)) {
+                    const recordElement = document.createElement("div");
+                    recordElement.classList.add("record");
+                    recordElement.innerHTML = `
+                        <p><strong>日期：</strong>${r.date}</p>
+                        <p><strong>類別：</strong>${r.category}</p>
+                        <p><strong>金額：</strong>${r.amount}</p>
+                        <p><strong>備註：</strong>${r.note}</p>
+                    `;
+                    recordsContainer.appendChild(recordElement);
+                    total += r.amount;
+                }
+            });
+
+            totalAmountDisplay.textContent = `總支出：$${total}`;
+        }
+
+        renderRecords();
+
+        // 當選擇月份改變時重新渲染
+        monthSelect.addEventListener("change", () => {
+            renderRecords(monthSelect.value);
+        });
+
     } catch (error) {
         console.error("讀取紀錄時發生錯誤：", error);
     }
 }
 
-// 顯示紀錄資料到網頁
-function displayRecords(data) {
-    recordsContainer.innerHTML = "";
 
-    for (let i = 1; i < data.length; i++) {
-        const [date, category, amount, note] = data[i];
-
-        const recordElement = document.createElement("div");
-        recordElement.classList.add("record");
-        recordElement.innerHTML = `
-            <p><strong>日期：</strong>${date}</p>
-            <p><strong>類別：</strong>${category}</p>
-            <p><strong>金額：</strong>${amount}</p>
-            <p><strong>備註：</strong>${note}</p>
-                <button class="delete-btn" data-index="${i + 1}">刪除</button>
-        `;
-
-        // 加入刪除按鈕監聽器
-        recordElement.querySelector(".delete-btn").addEventListener("click", async (e) => {
-            const rowIndex = e.target.dataset.index;
-            if (confirm("確定要刪除這筆紀錄嗎？")) {
-                await deleteRecord(rowIndex);
-                loadRecords();
-            }
-        });
-
-        recordsContainer.appendChild(recordElement);
-    }
-}
-
-// 新增資料並即時顯示
+// 新增資料（使用 no-cors）
 form.addEventListener("submit", async function (event) {
     event.preventDefault();
 
@@ -56,29 +73,49 @@ form.addEventListener("submit", async function (event) {
 
     const newRecord = { date, category, amount, note };
 
-    try {
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            body: JSON.stringify(newRecord),
-            headers: { "Content-Type": "application/json" }
-        });
+    await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newRecord),
+        mode: "no-cors" // 重要：解決跨域問題
+    });
 
-        const data = await response.json(); // 從伺服器取得更新後的所有紀錄
-        displayRecords(data); // 顯示在頁面上
-        form.reset();
-        alert("記帳成功！");
-    } catch (error) {
-        console.error("新增記帳時發生錯誤：", error);
-    }
+    alert("資料已成功送出！請到試算表查看結果");
+    form.reset();
+
+    // 可選：2 秒後重新載入資料（伺服器未保證已寫入）
+    setTimeout(loadRecords, 2000);
 });
-async function deleteRecord(index) {
-    try {
-        const response = await fetch(`${apiUrl}?method=delete&index=${index}`);
-        const result = await response.text();
-        console.log("刪除結果：", result);
-    } catch (error) {
-        console.error("刪除失敗：", error);
-    }
 
-// 初始載入
-window.addEventListener("load", loadRecords)}
+window.addEventListener("load", loadRecords);
+
+
+/* 以下是APP Script的內容
+// GET：讀取所有記帳資料
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const data = sheet.getDataRange().getValues();
+
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// POST：新增一筆資料
+function doPost(e) {
+  const sheet = SpreadsheetApp.openById(id).getActiveSheet();
+  const params = JSON.parse(e.postData.contents);
+
+  sheet.appendRow([params.date, params.category, params.amount, params.note]);
+
+  const response = {
+    status: "success",
+    message: "Data added successfully"
+  };
+
+  return ContentService.createTextOutput(JSON.stringify(response))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+*/

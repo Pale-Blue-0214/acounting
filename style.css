@@ -117,3 +117,84 @@ hr {
     background-color: #4701b8;
 }
 
+/* 整體左右佈局 */
+.container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 左邊新增支出 */
+.left-panel {
+    width: 35%;
+    background-color: #e3f8ff;
+    padding: 30px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+/* 右邊記帳紀錄 */
+.right-panel {
+    width: 65%;
+    background-color: #f9f9f9;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* 通用 section 區塊樣式 */
+.section {
+    max-width: 600px;
+    margin: auto;
+}
+
+/* 表單欄位統一風格 */
+form input, form select, form button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* 記帳紀錄區塊 */
+#records {
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+/* 單筆紀錄樣式 */
+.record {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* 記帳紀錄文字 */
+.record p {
+    margin: 8px 0;
+    color: #4a1070;
+    font-size: 1.1rem;
+}
+
+.record strong {
+    color: rgb(37, 29, 145);
+    font-weight: bold;
+}
+
+/* 表單欄位統一風格 */
+form input, form select, form button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
